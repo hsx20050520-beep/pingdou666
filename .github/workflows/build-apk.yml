@@ -27,7 +27,11 @@ jobs:
 
       - name: Build Android APK via EAS
         working-directory: ./pindoudraw/client
-        run: EXPO_TOKEN=${{ secrets.EXPO_TOKEN }} eas build --platform android --profile preview --non-interactive 2>&1
+        run: |
+          cd pindoudraw/client
+          EXPO_TOKEN=${{ secrets.EXPO_TOKEN }} npx eas init --force --non-interactive 2>&1 || echo "Init done or already exists"
+          EXPO_TOKEN=${{ secrets.EXPO_TOKEN }} eas build:configure --platform android --non-interactive 2>&1 || echo "Configure done"
+          EXPO_TOKEN=${{ secrets.EXPO_TOKEN }} eas build --platform android --profile preview --non-interactive 2>&1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
