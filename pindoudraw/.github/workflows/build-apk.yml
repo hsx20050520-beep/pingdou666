@@ -8,30 +8,27 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./client/android
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-node@v4
         with:
-          distribution: temurin
-          java-version: 17
+          node-version: 22
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
-
-      - name: Build APK
-        run: ./gradlew assembleRelease
+      - name: Install deps & Build
+        working-directory: ./pindoudraw/client
+        run: |
+          rm -rf node_modules
+          npm install 2>&1 | tail -10
+          npx eas build --platform android --profile preview --non-interactive 2>&1
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: client/android/app/build/outputs/apk/release/*.apk
-# workflow check
+          path: ./*.apk
