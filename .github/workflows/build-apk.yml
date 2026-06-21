@@ -23,11 +23,20 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install deps
+        run: |
+          node --version
+          npm init -y 2>&1 | tail -1
+          npm install --no-optional --ignore-scripts react-native @react-native/gradle-plugin 2>&1 | tail -5
+          echo "--- resolve test ---"
+          node -e "console.log('react-native:', require.resolve('react-native/package.json'))" 2>&1 || echo "FAIL: react-native not found"
+          node -e "console.log('gradle-plugin:', require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] }))" 2>&1 || echo "FAIL: gradle-plugin not found"
+
       - name: Grant execute permission
         run: chmod +x gradlew
 
       - name: Build APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
