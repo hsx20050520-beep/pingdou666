@@ -1,5 +1,8 @@
 {
   "cli": {
+    "appVersionSource": "local"
+  },
+  "cli": {
     "version": ">= 20.0.0",
     "requireCommit": true
   },
