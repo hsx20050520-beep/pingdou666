@@ -15,22 +15,19 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install pnpm
+        run: npm install -g pnpm@9
 
       - name: Install dependencies
-        run: |
-          cd pindoudraw
-          npm install -g pnpm@9 2>&1 | tail -1
-          pnpm install --no-frozen-lockfile 2>&1 | tail -5
+        working-directory: ./pindoudraw
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Build Android APK
-        run: |
-          cd pindoudraw/client
-          npx eas build --platform android --profile preview --non-interactive 2>&1 | tail -20
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Build Android APK via EAS
+        working-directory: ./pindoudraw/client
+        run: EAS_TOKEN=${{ secrets.EXPO_TOKEN }} eas build --platform android --profile preview --non-interactive 2>&1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
