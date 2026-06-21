@@ -11,23 +11,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-java@v4
         with:
-          node-version: 22
+          distribution: temurin
+          java-version: 17
 
-      - name: Install deps & Build
-        working-directory: ./pindoudraw/client
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Node.js deps
+        working-directory: ./pindoudraw
         run: |
-          cd ..
-          npx --yes pnpm@9 install --no-frozen-lockfile 2>&1 | tail -3
-          cd client
-          npx --yes expo install --fix expo-modules-autolinking 2>&1 | tail -5
-          npx --yes eas-cli build --platform android --profile preview --non-interactive 2>&1
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          npx --yes pnpm@9 install --no-frozen-lockfile 2>&1 | tail -5
+
+      - name: Fix gradle mirror + build
+        working-directory: ./pindoudraw/client/android
+        run: |
+          chmod +x gradlew
+          sed -i 's|mirrors.cloud.tencent.com/gradle/gradle|services.gradle.org/distributions/gradle|g' gradle/wrapper/gradle-wrapper.properties
+          cat gradle/wrapper/gradle-wrapper.properties
+          ./gradlew assembleRelease --no-daemon 2>&1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: ./*.apk
+          path: pindoudraw/client/android/app/build/outputs/apk/release/*.apk
