@@ -24,23 +24,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 留空=相对路径，自动跟随页面域名，局域网设备也可正常使用
-const API_BASE = process.env.EXPO_PUBLIC_BACKEND_BASE_URL || '';
+import { processImage, type ProcessedResult } from '../../utils/processing/processImage';
+import { saveResult } from '../../utils/localStore';
+const API_BASE = '';
 
-interface ProcessedResult {
-  id: string;
-  width: number;
-  height: number;
-  totalBeads: number;
-  colorCount: number;
-  legend: Array<{
-    id: string;
-    hex: string;
-    name: string;
-    brand: string;
-    count: number;
-    percentage: number;
-  }>;
-}
 
 const BRANDS = [
   { id: 'mard', name: 'Mard' },
@@ -72,8 +59,6 @@ export default function EditorScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [paletteCompression, setPaletteCompression] = useState<string>('off');
   const [saturation, setSaturation] = useState<number>(1.5);
-  const [processedResult, setProcessedResult] = useState<ProcessedResult | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
 
   useEffect(() => {
     if (params.imageUri) {
@@ -103,6 +88,7 @@ export default function EditorScreen() {
   };
 
   // 处理图片
+  // 处理图片（纯本地）
   const handleProcessImage = useCallback(async () => {
     if (!imageUri) {
       Alert.alert('错误', '请先选择图片');
@@ -113,61 +99,32 @@ export default function EditorScreen() {
     setIsGenerating(true);
 
     try {
-      // 创建 FormData
-      const formData = new FormData();
-      
-      // 获取文件信息
-      const filename = imageUri.split('/').pop() || 'image.jpg';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-      
-      // 添加文件（处理 Web 端 blob URL）
-      const file = await uriToFile(imageUri, filename, type);
-      formData.append('image', file);
-      
-      // 添加参数
-      formData.append('targetSize', pixelSize.toString());
-      formData.append('brand', brand);
-      formData.append('useColorMatching', useColorMatching.toString());
-      formData.append('paletteCompression', paletteCompression);
-      formData.append('saturation', saturation.toString());
-
-      const response = await fetch(`${API_BASE}/api/v1/bead/process`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setProcessedResult(result.data);
-        
-        // 设置预览 URL
-        const previewUrl = `${API_BASE}/api/v1/bead/preview/${result.data.id}?cellSize=8`;
-        setPreviewUrl(previewUrl);
-        
-        // 保存到历史记录
-        saveToHistory(result.data, imageUri);
-        
-        // 跳转到预览页
-        router.push('/preview', { 
-          imageId: result.data.id,
-          imageUri: imageUri,
-        });
-      } else {
-        Alert.alert('处理失败', result.error || '图片处理失败，请重试');
+      let source: string | File = imageUri;
+      if (Platform.OS === 'web') {
+        const resp = await fetch(imageUri);
+        const blob = await resp.blob();
+        const fn = imageUri.split('/').pop() || 'image.jpg';
+        source = new File([blob], fn, { type: blob.type || 'image/jpeg' });
       }
+
+      const result = await processImage(source, pixelSize, brand);
+      saveResult(result);
+
+      saveToHistory({
+        id: result.id, width: result.width, height: result.height,
+        totalBeads: result.totalBeads, colorCount: result.colorCount,
+        brand, pixelSize, legend: result.legend as any,
+      }, imageUri);
+
+      router.push('/preview', { resultId: result.id, imageUri });
     } catch (error) {
       console.error('Process error:', error);
-      Alert.alert('错误', '网络请求失败，请检查网络连接');
+      Alert.alert('错误', '处理失败: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsProcessing(false);
       setIsGenerating(false);
     }
-  }, [imageUri, pixelSize, brand, useColorMatching, router]);
+  }, [imageUri, pixelSize, brand, router]);
 
   // 保存到历史记录
   const saveToHistory = async (result: ProcessedResult, imageUri: string) => {
@@ -197,12 +154,7 @@ export default function EditorScreen() {
   };
 
   // 预览图片变化
-  const getPreviewUrl = useCallback(() => {
-    if (processedResult) {
-      return `${API_BASE}/api/v1/bead/preview/${processedResult.id}?cellSize=${Math.max(6, Math.floor(280 / processedResult.width))}`;
-    }
-    return '';
-  }, [processedResult]);
+
 
   const difficulty = getCurrentDifficulty();
 

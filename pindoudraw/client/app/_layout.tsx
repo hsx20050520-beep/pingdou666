@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LogBox } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { PixelReaderView } from '../utils/processing/PixelReader';
 import { Provider } from '@/components/Provider';
 
 import '../global.css';
@@ -13,6 +14,7 @@ LogBox.ignoreLogs([
 export default function RootLayout() {
   return (
     <Provider>
+      <PixelReaderView />
       <Stack
         screenOptions={{
           animation: 'slide_from_right',

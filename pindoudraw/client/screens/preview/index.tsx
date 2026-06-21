@@ -24,7 +24,10 @@ import { Screen } from '@/components/Screen';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 留空=相对路径，自动跟随页面域名，局域网设备也可正常使用
-const API_BASE = process.env.EXPO_PUBLIC_BACKEND_BASE_URL || '';
+import { getResult } from '../../utils/localStore';
+import { PatternPreview } from '../../components/PatternPreview';
+import { renderPatternCanvas, renderLegendCanvas } from '../../utils/processing/image-processor';
+const API_BASE: any = null;
 
 interface ProcessedResult {
   id: string;
@@ -45,9 +48,9 @@ interface ProcessedResult {
 
 export default function PreviewScreen() {
   const router = useSafeRouter();
-  const params = useSafeSearchParams<{ imageId: string; imageUri?: string }>();
+  const params = useSafeSearchParams<{ resultId: string; imageUri?: string }>();
   
-  const [imageId, setImageId] = useState<string>('');
+  const [resultId, setResultId] = useState<string>('');
   const [imageUri, setImageUri] = useState<string>('');
   const [result, setResult] = useState<ProcessedResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -56,14 +59,14 @@ export default function PreviewScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (params.imageId) {
-      setImageId(params.imageId);
-      loadPreview(params.imageId);
+    if (params.resultId) {
+      setResultId(params.resultId);
+      loadPreview(params.resultId);
     }
     if (params.imageUri) {
       setImageUri(params.imageUri);
     }
-  }, [params.imageId, params.imageUri]);
+  }, [params.resultId, params.imageUri]);
 
   // 加载预览数据
   const loadPreview = async (id: string) => {
@@ -246,21 +249,18 @@ export default function PreviewScreen() {
         <View style={styles.previewSection}>
           <Text style={styles.previewTitle}>像素图纸</Text>
           <View style={styles.previewContainer}>
-            {previewUrl ? (
-              <Image
-                source={{ uri: previewUrl }}
-                style={styles.previewImage}
-                resizeMode="contain"
-              />
+            {result ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator>
+                <ScrollView showsVerticalScrollIndicator>
+                  <PatternPreview result={result as any} />
+                </ScrollView>
+              </ScrollView>
             ) : (
               <View style={styles.previewPlaceholder}>
                 <ActivityIndicator size="small" color="#FF6B4A" />
               </View>
             )}
           </View>
-          <Text style={styles.previewHint}>
-            {result.width} x {result.height} 像素
-          </Text>
         </View>
 
         {/* Stats Card */}
