@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔥 腾讯影视 · 4K超清搜索</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'Microsoft YaHei',sans-serif;background:#0d0d1a;color:#fff;min-height:100vh}
+  .header{background:linear-gradient(135deg,#0a1628,#1a0a3e,#0a1628);padding:28px 16px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);position:relative}
+  .header h1{font-size:24px;font-weight:800;letter-spacing:2px}
+  .header h1 span{color:#ffd700}
+  .header .sub{font-size:12px;color:rgba(255,255,255,.4);margin-top:4px}
+  .search-box{max-width:520px;margin:14px auto 0;display:flex;gap:0;border-radius:50px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05)}
+  .search-box input{flex:1;padding:12px 18px;font-size:14px;border:none;outline:none;background:transparent;color:#fff}
+  .search-box input::placeholder{color:rgba(255,255,255,.3)}
+  .search-box button{padding:12px 28px;background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;font-size:14px;font-weight:700;color:#000;cursor:pointer;transition:opacity .2s}
+  .search-box button:active{opacity:.8}
+
+  .container{max-width:1100px;margin:0 auto;padding:16px}
+  
+  .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .filter-btn{padding:6px 16px;border-radius:50px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s}
+  .filter-btn.active{background:#ffd700;color:#000;border-color:#ffd700}
+  .filter-btn[data-quality="4k"]{border-color:rgba(255,215,0,.3)}
+  .filter-btn[data-quality="4k"].active{background:linear-gradient(135deg,#ffd700,#ff8c00);border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,.2)}
+
+  .stats{font-size:12px;color:rgba(255,255,255,.35);margin-bottom:14px}
+  .stats span{color:#ffd700}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+  
+  .card{background:rgba(255,255,255,.03);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:all .3s;position:relative}
+  .card:hover{background:rgba(255,255,255,.06);transform:translateY(-2px);border-color:rgba(255,215,0,.2)}
+  .card .cover{width:100%;aspect-ratio:3/4;background-size:cover;background-position:center;position:relative;background-color:#1a1a2e}
+  .card .cover .badge{position:absolute;top:8px;left:6px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+  .badge-4k{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;box-shadow:0 0 12px rgba(255,215,0,.3)}
+  .badge-1080{background:rgba(76,175,80,.8);color:#fff}
+  .badge-hd{background:rgba(33,150,243,.7);color:#fff}
+  .card .cover .overlay{position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(0,0,0,.8))}
+  .card .cover .play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px;opacity:0;transition:opacity .3s;filter:drop-shadow(0 0 10px rgba(0,0,0,.5))}
+  .card:hover .play-icon{opacity:1}
+  .card .cover .score-badge{position:absolute;bottom:8px;right:8px;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;background:rgba(255,215,0,.15);color:#ffd700}
+  
+  .card .info{padding:10px 12px 12px}
+  .card .info .title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+  .card .info .meta{font-size:11px;color:rgba(255,255,255,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card .info .quality-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+  .quality-tag{padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600}
+  .q-4k{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000}
+  .q-1080{background:#4CAF50;color:#fff}
+  .q-hd{background:#2196F3;color:#fff}
+  .q-sd{background:rgba(255,255,255,.15);color:rgba(255,255,255,.6)}
+
+  .loading{text-align:center;padding:60px 0;color:rgba(255,255,255,.3)}
+  .loading .spin{width:40px;height:40px;border:3px solid rgba(255,215,0,.1);border-top-color:#ffd700;border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .empty{text-align:center;padding:80px 0;color:rgba(255,255,255,.2)}
+  .empty .e{font-size:48px}.empty h3{font-size:18px;margin:8px 0 4px;color:rgba(255,255,255,.4)}.empty p{font-size:13px}
+
+  .footer{text-align:center;padding:20px;font-size:11px;color:rgba(255,255,255,.15);border-top:1px solid rgba(255,255,255,.03);margin-top:20px}
+
+  /* 详情弹窗 */
+  .modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px}
+  .modal.show{display:flex}
+  .modal-content{background:#1a1a2e;border-radius:16px;max-width:500px;width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,.08);animation:fadeUp .3s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+  .modal-content .modal-cover{width:100%;aspect-ratio:16/9;background-size:cover;background-position:center;position:relative;background-color:#1a1a2e}
+  .modal-content .modal-cover .overlay{position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.8))}
+  .modal-content .modal-cover .m-title{position:absolute;bottom:12px;left:14px;font-size:20px;font-weight:800;right:14px}
+  .modal-body{padding:14px 16px 18px}
+  .modal-body .m-desc{font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:12px}
+  .modal-body .m-info{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.8}
+  .modal-body .m-qualities{margin-bottom:14px}
+  .modal-body .m-qualities .ql{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:6px}
+  .modal-body .m-qualities .q-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .modal-body .btn-watch{display:block;width:100%;padding:12px;background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;border-radius:50px;font-size:14px;font-weight:700;color:#000;cursor:pointer;text-align:center;text-decoration:none;transition:transform .15s}
+  .modal-body .btn-watch:active{transform:scale(.97)}
+  .modal-close{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:16px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🔥 腾讯影视 · <span>4K</span> 超清搜索</h1>
+  <div class="sub">搜你想看的 · 一眼看清有没有4K</div>
+  <div class="search-box">
+    <input id="searchInput" placeholder="搜电影、电视剧、综艺..." onkeydown="if(event.key==='Enter')search()">
+    <button onclick="search()">🔍 搜索</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-btn active" data-quality="all" onclick="setFilter('all')">🌟 全部</button>
+    <button class="filter-btn" data-quality="4k" onclick="setFilter('4k')">🔥 4K超清</button>
+    <button class="filter-btn" data-quality="1080" onclick="setFilter('1080')">📺 1080P</button>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div id="results"></div>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content" id="modalContent" onclick="event.stopPropagation()"></div>
+</div>
+
+<div class="footer">腾讯影视搜索 · 数据来自腾讯视频公开接口 · 仅供学习参考</div>
+
+<script>
+let allResults = [];
+let currentFilter = 'all';
+
+async function search() {
+  const keyword = document.getElementById('searchInput').value.trim();
+  if (!keyword) return;
+  
+  document.getElementById('results').innerHTML = '<div class="loading"><div class="spin"></div>正在搜索...</div>';
+  document.getElementById('stats').textContent = '';
+  
+  try {
+    const resp = await fetch('/api/search?keyword=' + encodeURIComponent(keyword));
+    const data = await resp.json();
+    
+    if (data.code !== 0) {
+      document.getElementById('results').innerHTML = `<div class="empty"><div class="e">😅</div><h3>${data.msg || '搜索失败'}</h3></div>`;
+      return;
+    }
+    
+    allResults = data.list || [];
+    renderResults();
+  } catch (e) {
+    document.getElementById('results').innerHTML = '<div class="empty"><div class="e">💀</div><h3>请求超时，试试其他关键词</h3></div>';
+  }
+}
+
+function renderResults() {
+  const stats = document.getElementById('stats');
+  const container = document.getElementById('results');
+  
+  let filtered = allResults;
+  if (currentFilter === '4k') filtered = allResults.filter(r => r.has4K);
+  else if (currentFilter === '1080') filtered = allResults.filter(r => r.has1080p && !r.has4K);
+  
+  const total4K = allResults.filter(r => r.has4K).length;
+  stats.innerHTML = `共找到 <span>${allResults.length}</span> 个结果 · 其中 <span style="color:#ffd700">${total4K} 部支持4K</span>`;
+  
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty"><div class="e">🔍</div><h3>没有匹配的结果</h3></div>`;
+    return;
+  }
+  
+  container.innerHTML = `<div class="grid">${filtered.map(item => `
+    <div class="card" onclick="showDetail(${JSON.stringify(item).replace(/"/g,'&quot;')})">
+      <div class="cover" style="background-image:url(${item.cover || ''})">
+        ${item.has4K ? '<span class="badge badge-4k">🔥 4K</span>' : item.has1080p ? '<span class="badge badge-1080">1080P</span>' : '<span class="badge badge-hd">HD</span>'}
+        <div class="overlay"></div>
+        <div class="play-icon">▶️</div>
+        ${item.score ? `<div class="score-badge">⭐ ${item.score}</div>` : ''}
+      </div>
+      <div class="info">
+        <div class="title">${item.title}</div>
+        <div class="meta">${item.category || item.year ? (item.category||'') + (item.year ? ' · ' + item.year : '') : ''}</div>
+        <div class="quality-tags">
+          ${item.has4K ? '<span class="quality-tag q-4k">4K</span>' : ''}
+          ${item.has1080p ? '<span class="quality-tag q-1080">1080P</span>' : ''}
+          ${item.qualities.slice(0, 3).map(q => {
+            if (q.includes('4K') || q.includes('2160')) return '';
+            if (q.includes('蓝光') || q.includes('1080')) return '';
+            return `<span class="quality-tag q-hd">${q}</span>`;
+          }).filter(Boolean).join('')}
+          ${item.qualities.length > 3 ? `<span class="quality-tag q-sd">+${item.qualities.length - 3}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.quality === f));
+  renderResults();
+}
+
+function showDetail(item) {
+  const content = document.getElementById('modalContent');
+  content.innerHTML = `
+    <div class="modal-cover" style="background-image:url(${item.cover || ''})">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="overlay"></div>
+      <div class="m-title">${item.title}</div>
+    </div>
+    <div class="modal-body">
+      ${item.desc ? `<div class="m-desc">${item.desc}</div>` : ''}
+      <div class="m-info">
+        ${item.actors ? `<div>🎭 主演：${item.actors}</div>` : ''}
+        ${item.director ? `<div>🎬 导演：${item.director}</div>` : ''}
+        ${item.category ? `<div>📂 类型：${item.category}</div>` : ''}
+        ${item.year ? `<div>📅 年份：${item.year}</div>` : ''}
+        ${item.score ? `<div>⭐ 评分：${item.score}</div>` : ''}
+      </div>
+      ${item.qualities.length ? `<div class="m-qualities"><div class="ql">📺 可用清晰度：</div><div class="q-tags">${item.qualities.map(q => {
+        const cls = q.includes('4K') || q.includes('2160') ? 'q-4k' : q.includes('蓝光') || q.includes('1080') ? 'q-1080' : 'q-hd';
+        return `<span class="quality-tag ${cls}">${q}</span>`;
+      }).join('')}</div></div>` : ''}
+      ${item.playUrl ? `<a class="btn-watch" href="${item.playUrl}" target="_blank" rel="noopener">▶ 在腾讯视频观看</a>` : '<div style="color:rgba(255,255,255,.3);font-size:12px;text-align:center">暂无播放链接</div>'}
+    </div>
+  `;
+  document.getElementById('modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>

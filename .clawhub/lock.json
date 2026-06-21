@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "skills": {
+    "wechat": {
+      "version": "2.1.0",
+      "installedAt": 1778927677134
+    },
+    "wechat-qwen-reply": {
+      "version": "0.1.1",
+      "installedAt": 1778930611569
+    },
+    "clawphone-wechat-control": {
+      "version": "1.0.0",
+      "installedAt": 1778930639259
+    },
+    "screen-monitor": {
+      "version": "1.0.1",
+      "installedAt": 1778931194566
+    },
+    "capture-windows-screen": {
+      "version": "0.1.0",
+      "installedAt": 1778931202483
+    },
+    "wecom-setup": {
+      "version": "1.0.0",
+      "installedAt": 1778934339889
+    },
+    "wecom-connect": {
+      "version": "1.0.0",
+      "installedAt": 1778934474505
+    }
+  }
+}

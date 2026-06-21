@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html manifest="">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>去哪玩 - 旅行向导</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--primary:#2563eb;--primary-dark:#1d4ed8;--accent:#f59e0b;--green:#059669;--red:#ef4444;--bg:#f8fafc;--card:#fff;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--border:#e2e8f0;--shadow:0 2px 12px rgba(0,0,0,.06);--radius:14px;--radius-sm:10px}
+html,body{height:100%;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+a{color:var(--primary);text-decoration:none}
+
+/* ===== STRUCTURE ===== */
+.app-shell{display:block;height:100%}
+.page-scroll{overflow-y:visible;padding:12px 14px 80px;-webkit-overflow-scrolling:touch}
+.page-scroll::-webkit-scrollbar{width:4px}
+.page-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px} .page-scroll{-webkit-overflow-scrolling:touch}
+
+/* ===== BOTTOM TAB ===== */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom,0);z-index:50}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 8px;font-size:10px;color:var(--text3);border:none;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .15s}
+.tab-btn .tab-icon{font-size:22px;line-height:1}
+.tab-btn.active{color:var(--primary)}
+.tab-btn.active .tab-icon{transform:scale(1.05)}
+
+/* ===== PAGE CONTAINERS ===== */
+.page{display:none}.page.active{display:block}
+
+/* ===== SEARCH ===== */
+.search-box{display:flex;align-items:center;background:#fff;border-radius:50px;padding:0 14px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.search-box .sicon{font-size:16px;margin-right:8px;color:var(--text3)}
+.search-box input{flex:1;border:none;padding:11px 0;font-size:14px;outline:none;background:transparent}
+.clear-btn{padding:4px 8px;font-size:12px;color:var(--text3);cursor:pointer}
+
+/* ===== FILTERS ===== */
+.filter-bar{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;white-space:nowrap;padding-bottom:4px}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-item{display:inline-block;padding:6px 16px;border-radius:50px;font-size:13px;font-weight:500;color:var(--text2);background:#fff;border:1px solid var(--border);cursor:pointer;flex-shrink:0;transition:all .2s}
+.filter-item.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* ===== CARDS ===== */
+.dest-list{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s}
+.card:active{transform:scale(.98)}
+.card-img{height:180px;position:relative;overflow:hidden}
+.card-img .img-bg{position:absolute;inset:0}
+.card-img .img-pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.88}
+.card-img .img-tag{position:absolute;top:10px;left:10px;padding:3px 10px;border-radius:50px;font-size:11px;color:#fff;font-weight:600;z-index:2}
+.tag-hot{background:#ef4444}.tag-popular{background:var(--accent)}.tag-hidden{background:#8b5cf6}.tag-beach{background:#0ea5e9}.tag-city{background:var(--primary)}
+.wish-star{position:absolute;right:10px;top:10px;font-size:20px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:3}
+.wish-star.active{background:rgba(239,68,68,.85)}
+.card-body{padding:12px 14px 14px}
+.card-title{font-size:16px;font-weight:700}
+.card-loc{font-size:12px;color:var(--text3);margin-top:2px}.card-loc::before{content:'📍 '}
+.card-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--text3)}
+
+/* ===== SHAKE PAGE ===== */
+.shake-wrap{min-height:100%;background:linear-gradient(180deg,#1e3a8a,#2563eb 40%,var(--bg) 100%);display:flex;flex-direction:column;align-items:center;padding:20px 16px 30px}
+.shake-title{font-size:24px;font-weight:800;color:#fff;text-align:center}
+.shake-desc{font-size:13px;color:rgba(255,255,255,.7);text-align:center;margin-top:6px;line-height:1.6}
+.shake-btn{width:100%;max-width:320px;min-height:300px;background:rgba(255,255,255,.12);backdrop-filter:blur(12px);border-radius:24px;border:1px solid rgba(255,255,255,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:14px 0;padding:24px 16px;cursor:pointer;transition:all .3s;color:#fff}
+.shake-btn:active{transform:scale(.97)}
+.shake-btn .emoji{font-size:72px;margin-bottom:12px;display:block}
+.shake-btn .hint{font-size:14px;text-align:center;line-height:1.5;color:rgba(255,255,255,.85)}
+
+/* Shake result */
+.shake-result{width:100%}
+.shake-result .res-img{width:100%;height:150px;border-radius:14px;overflow:hidden;position:relative}
+.shake-result .res-img .img-bg{position:absolute;inset:0}
+.shake-result .res-img .img-pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85}
+.shake-result .res-badge{display:inline-block;padding:3px 12px;border-radius:50px;font-size:12px;font-weight:600;color:#fff;margin-top:-10px;margin-left:12px;position:relative}
+.shake-result .res-name{font-size:20px;font-weight:800;color:var(--text)}
+.shake-result .res-loc{font-size:12px;color:var(--text3)}
+.shake-result .res-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-top:6px}
+.shake-result .res-meta{display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--text3)}
+.shake-result .res-acts{display:flex;gap:10px;margin-top:12px}
+.btn-pri{flex:1;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;border-radius:50px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;text-align:center}
+.btn-sec{flex:1;background:#f1f5f9;color:#475569;border:none;border-radius:50px;padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;text-align:center}
+.shake-stats{display:flex;gap:20px;background:#fff;border-radius:16px;padding:16px 24px;box-shadow:var(--shadow);justify-content:space-around;width:100%;max-width:320px;margin-top:8px}
+.stat-item{text-align:center}.stat-val{font-size:20px;font-weight:800;color:var(--primary);display:block}.stat-lbl{font-size:11px;color:var(--text3)}
+
+/* ===== QUIZ ===== */
+.quiz-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:24px 16px;text-align:center}
+.quiz-mascot{font-size:60px}.quiz-qtitle{font-size:24px;font-weight:800;margin:8px 0 4px}.quiz-desc{font-size:13px;color:var(--text2);line-height:1.6}
+.quiz-high{font-size:13px;color:var(--text3);margin:6px 0 14px}
+.quiz-prog{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:6px}
+.prog-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--green));border-radius:3px;transition:width .3s}
+.prog-txt{font-size:11px;color:var(--text3);white-space:nowrap}
+.quiz-score{font-size:12px;color:var(--text2);text-align:right;display:block;width:100%;margin-bottom:10px}
+.quiz-card{background:#fff;border-radius:16px;padding:22px 18px;box-shadow:var(--shadow);width:100%;text-align:left}
+.quiz-q{font-size:16px;font-weight:700;line-height:1.5;display:block;margin-bottom:18px}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:8px;cursor:pointer;transition:all .2s}
+.quiz-opt:active{transform:scale(.98)}
+.quiz-opt.correct{background:#ecfdf5;border-color:var(--green)}
+.quiz-opt.wrong{background:#fef2f2;border-color:var(--red)}
+.quiz-opt.disabled{opacity:.6}
+.opt-letter{font-weight:700;color:var(--text3);width:18px}
+.opt-text{flex:1;font-size:13px}
+.next-btn{width:100%;margin-top:12px}
+.finish-emoji{font-size:56px}.finish-title{font-size:22px;font-weight:800;margin:6px 0}
+.finish-score{font-size:48px;font-weight:800;color:var(--primary)}
+.finish-total{font-size:20px;color:var(--text3)}
+.finish-desc{font-size:13px;color:var(--text2);margin:4px 0 10px}
+.finish-stats{display:flex;gap:16px;margin:8px 0 14px}
+.finish-stat{font-size:12px;color:var(--text2);text-align:center}
+.finish-stat .num{font-weight:700;color:var(--text);font-size:18px;display:block}
+.finish-acts{display:flex;gap:10px}
+
+/* ===== WISH ===== */
+.wish-stats{display:flex;gap:10px;margin-bottom:10px}
+.wish-stat{flex:1;border-radius:14px;padding:12px 0;text-align:center;color:#fff}
+.wish-stat .val{font-size:22px;font-weight:800;display:block}
+.wish-stat .lbl{font-size:11px;opacity:.85}
+.bg-wish{background:linear-gradient(135deg,var(--red),#f97316)}
+.bg-done{background:linear-gradient(135deg,var(--green),#10b981)}
+.bg-all{background:linear-gradient(135deg,var(--primary),#3b82f6)}
+.wish-prog{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:14px;box-shadow:var(--shadow);cursor:pointer}
+.wish-prog .lbl{font-size:11px;color:var(--text2)}
+.wish-prog .bar{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.wish-prog .fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--green));border-radius:4px;transition:width .5s}
+.wish-prog .pct{font-size:11px;color:var(--primary);font-weight:700}
+.wish-tabs{display:flex;background:#f1f5f9;border-radius:12px;padding:3px;margin-bottom:12px}
+.wish-tab{flex:1;text-align:center;padding:7px 0;font-size:12px;font-weight:600;color:var(--text2);border-radius:10px;cursor:pointer;transition:all .2s}
+.wish-tab.active{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+
+/* ===== DETAIL ===== */
+.detail-hero{height:220px;position:relative;margin:-12px -14px 0;border-radius:0 0 20px 20px;overflow:hidden}
+.detail-hero .hero-bg{position:absolute;inset:0}
+.detail-hero .hero-pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7}
+.detail-hero .hero-overlay{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.detail-hero .hero-text{position:absolute;bottom:14px;left:14px;color:#fff;z-index:2}
+.detail-hero .hero-text .name{font-size:24px;font-weight:800;display:block}
+.detail-hero .hero-text .loc{font-size:12px;opacity:.85;margin-top:2px}
+.detail-acts{display:flex;gap:8px;margin:12px 0 14px}
+.detail-acts .act{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border-radius:12px;padding:8px 0;box-shadow:var(--shadow);font-size:10px;color:var(--text2);cursor:pointer}
+.detail-acts .act.active{background:#f0f9ff;color:var(--primary)}
+.detail-acts .act .icon{font-size:18px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.info-card{background:var(--bg);border-radius:10px;padding:10px;text-align:center}
+.info-card .val{font-size:13px;font-weight:700;display:block}
+.info-card .lbl{font-size:10px;color:var(--text3)}
+.section{margin-bottom:16px}
+.section h4{font-size:15px;font-weight:700;margin-bottom:8px}
+.highlight-item{display:flex;gap:8px;background:var(--bg);padding:9px 12px;border-radius:10px;margin-bottom:6px}
+.highlight-item .b{color:var(--primary);font-weight:700}
+.highlight-item .t{font-size:12px;color:var(--text2);flex:1}
+.food-tags{display:flex;flex-wrap:wrap;gap:6px}
+.food-tag{padding:5px 12px;border-radius:50px;background:#fef3c7;font-size:12px;color:#92400e}
+.tip-item{display:flex;gap:8px;background:#f0f9ff;padding:9px 12px;border-radius:10px;border-left:3px solid var(--primary);margin-bottom:6px}
+.tip-item .t{font-size:12px;color:var(--text2);flex:1}
+.trans-box{background:var(--bg);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.6}
+
+/* ===== EMPTY ===== */
+.empty{padding:50px 0;text-align:center}
+.empty .e{font-size:48px}.empty h3{font-size:17px;font-weight:600;margin:8px 0 4px}.empty p{font-size:13px;color:var(--text2)}
+
+/* ===== OVERLAY ===== */
+.overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);justify-content:center;align-items:center;padding:20px}
+.overlay.show{display:flex}
+.overlay-inner{background:#fff;border-radius:16px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== SPLASH ===== */
+.splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:linear-gradient(135deg,#1e3a8a,#2563eb,#059669);color:#fff;position:absolute;inset:0;z-index:200;transition:opacity .5s}
+.splash.hide{opacity:0;pointer-events:none}
+.splash h1{font-size:38px;font-weight:800;letter-spacing:-1px}
+.splash p{font-size:14px;opacity:.7;margin-top:6px}
+.splash .spinner{width:24px;height:24px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-top:24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH ===== -->
+<div class="splash" id="splash">
+  <h1>🌍 去哪玩</h1>
+  <p>发现世界的美好</p>
+  <div class="spinner"></div>
+</div>
+
+<!-- ===== APP SHELL ===== -->
+<div class="app-shell" id="appShell">
+
+  <!-- === PAGE 1: INDEX === -->
+  <div class="page active" id="pageIndex">
+    <div class="page-active" id="indexScroll">
+      <div class="search-box">
+        <span class="sicon">🔍</span>
+        <input placeholder="搜索目的地，如：大理、成都..." id="searchInput" onkeydown="if(event.key==='Enter')doSearch()">
+        <span class="clear-btn" onclick="clearSearch()" id="clearBtn" style="display:none">✕</span>
+      </div>
+      <div class="filter-bar" id="filterBar"></div>
+      <div class="dest-list" id="destList"></div>
+      <div class="empty" id="emptyState" style="display:none">
+        <div class="e">🔍</div><h3>没找到</h3><p>试试其他关键词吧</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- === PAGE 2: SHAKE === -->
+  <div class="page" id="pageShake">
+    <div class="shake-wrap">
+      <div class="shake-title">🎲 摇一摇</div>
+      <div class="shake-desc">摇动手机或点击下方<br/>让命运决定下一站去哪</div>
+      <div class="shake-btn" id="shakeBtn" onclick="doShake()">
+        <div id="shakeIdle">
+          <span class="emoji">🎲</span>
+          <div class="hint">摇动手机<br>或点击这里</div>
+        </div>
+        <div id="shakeResult" style="display:none" class="shake-result"></div>
+      </div>
+      <div class="shake-stats">
+        <div class="stat-item"><span class="stat-val" id="shakeCount">0</span><span class="stat-lbl">摇过</span></div>
+        <div class="stat-item"><span class="stat-val" id="wishCount">0</span><span class="stat-lbl">心愿</span></div>
+        <div class="stat-item"><span class="stat-val" id="checkinCount">0</span><span class="stat-lbl">打卡</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === PAGE 3: QUIZ === -->
+  <div class="page" id="pageQuiz">
+    <div class="page-active" style="display:flex">
+      <div class="quiz-wrap" id="quizWrap"></div>
+    </div>
+  </div>
+
+  <!-- === PAGE 4: WISH === -->
+  <div class="page" id="pageWish">
+    <div class="page-active" id="wishScroll"></div>
+  </div>
+
+  <!-- ===== TAB BAR ===== -->
+  <div class="tab-bar" id="tabBar">
+    <button class="tab-btn active" data-page="pageIndex"><span class="tab-icon">🌍</span>发现</button>
+    <button class="tab-btn" data-page="pageShake"><span class="tab-icon">🎲</span>摇一摇</button>
+    <button class="tab-btn" data-page="pageQuiz"><span class="tab-icon">🧠</span>问答</button>
+    <button class="tab-btn" data-page="pageWish"><span class="tab-icon">❤️</span>心愿</button>
+  </div>
+</div>
+
+<!-- ===== DETAIL OVERLAY ===== -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="overlay-inner" id="detailBody" onclick="event.stopPropagation()"></div>
+</div>
+
+<script>
+// ======================== DATA ========================
+const GRADIENTS = [
+  'linear-gradient(135deg,#2563eb,#7c3aed)','linear-gradient(135deg,#059669,#10b981)','linear-gradient(135deg,#dc2626,#f97316)',
+  'linear-gradient(135deg,#0ea5e9,#38bdf8)','linear-gradient(135deg,#7c3aed,#a78bfa)','linear-gradient(135deg,#ca8a04,#f59e0b)',
+  'linear-gradient(135deg,#ef4444,#dc2626)','linear-gradient(135deg,#2563eb,#3b82f6)','linear-gradient(135deg,#0891b2,#06b6d4)',
+  'linear-gradient(135deg,#e11d48,#fb7185)','linear-gradient(135deg,#059669,#34d399)','linear-gradient(135deg,#0284c7,#38bdf8)',
+  'linear-gradient(135deg,#7c3aed,#c084fc)','linear-gradient(135deg,#dc2626,#f87171)','linear-gradient(135deg,#d97706,#fbbf24)',
+  'linear-gradient(135deg,#65a30d,#a3e635)','linear-gradient(135deg,#6b7280,#9ca3af)','linear-gradient(135deg,#2563eb,#60a5fa)',
+  'linear-gradient(135deg,#e11d48,#f43f5e)','linear-gradient(135deg,#ca8a04,#eab308)'];
+const SEEDS = ['dali','xiamen','chengdu','sanya','hangzhou','chongqing','beijing','xian','wuhan','changsha','guilin','qingdao','daochengyading','lasa','dunhuang','wuyuan','shanghai','haerbin','dongjing','manggu'];
+
+const DESTINATIONS = [
+  {id:1,name:'大理',loc:'云南·大理',tag:'热门',tc:'hot',g:GRADIENTS[0],img:`https://picsum.photos/seed/${SEEDS[0]}/600/400`,rt:4.8,bm:'3-5月/9-11月',dy:'3-5天',bg:'¥2000-4000',
+    sum:'风花雪月，苍山洱海——大理是每个文艺青年心中的白月光。',
+    hl:['洱海环湖骑行','苍山洗马潭索道','大理古城人民路','喜洲古镇','双廊古镇'],
+    fd:'酸辣鱼、烤乳扇、大理砂锅鱼、喜洲粑粑、雕梅、凉鸡米线',
+    tp:['住洱海边民宿看日出','租电动车注意防晒','古城晚上更有味道','旺季提前订房'],
+    tr:'✈️ 大理凤儀机场  |  🚄 大理站'},
+  {id:2,name:'厦门',loc:'福建·厦门',tag:'热门',tc:'hot',g:GRADIENTS[1],img:`https://picsum.photos/seed/${SEEDS[1]}/600/400`,rt:4.7,bm:'3-5月/10-12月',dy:'3-4天',bg:'¥2000-3500',
+    sum:'海上花园，文艺鹭岛。鼓浪屿的钢琴声、环岛路的海风。',
+    hl:['鼓浪屿','环岛路骑行','沙坡尾艺术区','南普陀寺','厦门大学'],
+    fd:'沙茶面、土笋冻、海蛎煎、姜母鸭、花生汤、烧肉粽',
+    tp:['鼓浪屿船票提前3天预订','别在鼓浪屿上吃正餐','厦大参观需预约','环岛路傍晚骑行'],
+    tr:'✈️ 厦门高崎机场  |  🚄 厦门站'},
+  {id:3,name:'成都',loc:'四川·成都',tag:'热门',tc:'hot',g:GRADIENTS[2],img:`https://picsum.photos/seed/${SEEDS[2]}/600/400`,rt:4.9,bm:'3-6月/9-11月',dy:'3-5天',bg:'¥2000-4000',
+    sum:'天府之国，美食之都。火锅、熊猫、茶馆、宽窄巷子。',
+    hl:['大熊猫繁育基地','宽窄巷子/锦里','人民公园鹤鸣茶社','都江堰','青城山'],
+    fd:'火锅、串串香、担担面、龙抄手、夫妻肺片、钵钵鸡、冰粉',
+    tp:['火锅去巷子里的老店','看熊猫一定早上去','地铁很方便','吃辣配唯怡豆奶'],
+    tr:'✈️ 成都天府/双流机场  |  🚄 成都东站'},
+  {id:4,name:'三亚',loc:'海南·三亚',tag:'海滩',tc:'beach',g:GRADIENTS[3],img:`https://picsum.photos/seed/${SEEDS[3]}/600/400`,rt:4.6,bm:'10月-次年4月',dy:'4-6天',bg:'¥3000-6000',
+    sum:'中国最美的热带海滨，椰风海韵，潜水冲浪。',
+    hl:['亚龙湾','蜈支洲岛','天涯海角','椰梦长廊','南山文化旅游区'],
+    fd:'文昌鸡、加积鸭、东山羊、和乐蟹、清补凉、椰子鸡',
+    tp:['避开6-9月台风季','去分界洲岛性价比高','海鲜去第一市场','防晒！'],
+    tr:'✈️ 三亚凤凰机场  |  🚄 三亚站'},
+  {id:5,name:'杭州',loc:'浙江·杭州',tag:'热门',tc:'hot',g:GRADIENTS[4],img:`https://picsum.photos/seed/${SEEDS[4]}/600/400`,rt:4.8,bm:'3-5月/9-11月',dy:'2-4天',bg:'¥2000-4000',
+    sum:'上有天堂，下有苏杭。西湖烟雨、龙井茶香、灵隐钟声。',
+    hl:['西湖','灵隐寺','龙井村','西溪湿地','京杭大运河'],
+    fd:'西湖醋鱼、东坡肉、龙井虾仁、葱包烩、片儿川、定胜糕',
+    tp:['西湖别开车骑单车','龙井去正规茶庄','灵隐寺早上去','春天3-4月最美'],
+    tr:'✈️ 杭州萧山机场  |  🚄 杭州东站'},
+  {id:6,name:'重庆',loc:'重庆',tag:'热门',tc:'hot',g:GRADIENTS[5],img:`https://picsum.photos/seed/${SEEDS[5]}/600/400`,rt:4.7,bm:'3-5月/9-10月',dy:'3-4天',bg:'¥2000-3500',
+    sum:'8D魔幻城市，火锅之都。轻轨穿楼、洪崖洞夜景。',
+    hl:['洪崖洞','李子坝轻轨站','长江索道','磁器口古镇','武隆天生三桥'],
+    fd:'重庆火锅、小面、酸辣粉、毛血旺、辣子鸡、豆花饭',
+    tp:['导航不太靠谱多问人','洪崖洞免费免票','有微辣鸳鸯锅','夏天极热避开7-8月'],
+    tr:'✈️ 重庆江北机场  |  🚄 重庆北站'},
+  {id:7,name:'北京',loc:'北京',tag:'热门',tc:'hot',g:GRADIENTS[6],img:`https://picsum.photos/seed/${SEEDS[6]}/600/400`,rt:4.8,bm:'3-5月/9-11月',dy:'4-6天',bg:'¥3000-6000',
+    sum:'千年帝都，故宫长城、胡同烤鸭，历史与现代交织。',
+    hl:['故宫博物院','八达岭/慕田峪长城','天坛公园','颐和园','南锣鼓巷'],
+    fd:'北京烤鸭、炸酱面、涮羊肉、豆汁儿焦圈、卤煮火烧',
+    tp:['故宫提前7天预约','长城去慕田峪人少','地铁最方便','春秋最佳'],
+    tr:'✈️ 首都/大兴机场  |  🚄 北京站'},
+  {id:8,name:'西安',loc:'陕西·西安',tag:'热门',tc:'hot',g:GRADIENTS[7],img:`https://picsum.photos/seed/${SEEDS[7]}/600/400`,rt:4.8,bm:'3-5月/9-10月',dy:'3-5天',bg:'¥2000-4000',
+    sum:'十三朝古都，兵马俑、不夜城、羊肉泡馍，梦回长安。',
+    hl:['兵马俑博物馆','西安城墙','大唐不夜城','陕西历史博物馆','华山'],
+    fd:'羊肉泡馍、肉夹馍、凉皮、biangbiang面、葫芦鸡、甑糕',
+    tp:['陕博免费难约提前抢','兵马俑预留半天','回民街吃小吃','华山西上北下索道'],
+    tr:'✈️ 西安咸阳机场  |  🚄 西安北站'},
+  {id:9,name:'武汉',loc:'湖北·武汉',tag:'城市',tc:'city',g:GRADIENTS[8],img:`https://picsum.photos/seed/${SEEDS[8]}/600/400`,rt:4.6,bm:'3-5月/9-11月',dy:'3-4天',bg:'¥1800-3500',
+    sum:'九省通衢，江城武汉。黄鹤楼、东湖、热干面、樱花。',
+    hl:['黄鹤楼','东湖风景区','武汉大学','江汉路步行街','湖北省博物馆'],
+    fd:'热干面、武昌鱼、鸭脖、豆皮、面窝、排骨藕汤',
+    tp:['武大樱花季需预约','去粮道街吃更地道','长江轮渡看江景','夏天是火炉'],
+    tr:'✈️ 武汉天河机场  |  🚄 武汉站'},
+  {id:10,name:'长沙',loc:'湖南·长沙',tag:'热门',tc:'hot',g:GRADIENTS[9],img:`https://picsum.photos/seed/${SEEDS[9]}/600/400`,rt:4.7,bm:'3-5月/9-11月',dy:'2-3天',bg:'¥1500-3000',
+    sum:'不夜城，快乐星城。岳麓山、橘子洲、茶颜悦色。',
+    hl:['岳麓山','橘子洲头','太平老街/坡子街','五一广场','湖南省博物馆'],
+    fd:'臭豆腐、口味虾、糖油粑粑、长沙米粉、辣椒炒肉、茶颜悦色',
+    tp:['茶颜悦色遍地是','橘子洲周末有烟花','长沙夜生活丰富','住五一广场附近'],
+    tr:'✈️ 长沙黄花机场  |  🚄 长沙南站'},
+  {id:11,name:'桂林',loc:'广西·桂林',tag:'热门',tc:'hot',g:GRADIENTS[10],img:`https://picsum.photos/seed/${SEEDS[10]}/600/400`,rt:4.7,bm:'4-10月',dy:'4-5天',bg:'¥2000-4000',
+    sum:'桂林山水甲天下，漓江竹筏、阳朔西街、龙脊梯田。',
+    hl:['漓江竹筏','阳朔西街','龙脊梯田','象鼻山','十里画廊'],
+    fd:'桂林米粉、啤酒鱼、田螺酿、荔浦芋扣肉、油茶',
+    tp:['漓江竹筏更亲近水','龙脊5月灌水9月金黄','阳朔租电动车','遇龙河漂流更清静'],
+    tr:'✈️ 桂林两江机场  |  🚄 桂林站/阳朔站'},
+  {id:12,name:'青岛',loc:'山东·青岛',tag:'海滩',tc:'beach',g:GRADIENTS[11],img:`https://picsum.photos/seed/${SEEDS[11]}/600/400`,rt:4.7,bm:'5-10月',dy:'3-5天',bg:'¥2000-4000',
+    sum:'红瓦绿树，碧海蓝天。啤酒之都，欧韵之城。',
+    hl:['栈桥','八大关','崂山','啤酒博物馆','小麦岛公园'],
+    fd:'辣炒蛤蜊、海鲜水饺、排骨米饭、鲅鱼水饺、原浆啤酒',
+    tp:['7-8月啤酒节住宿翻倍','八大关适合步行','去营口路市场吃海鲜','崂山南线更好'],
+    tr:'✈️ 青岛胶东机场  |  🚄 青岛站'},
+  {id:13,name:'稻城亚丁',loc:'四川·甘孜',tag:'小众',tc:'hidden',g:GRADIENTS[12],img:`https://picsum.photos/seed/${SEEDS[12]}/600/400`,rt:4.9,bm:'5-10月',dy:'5-7天',bg:'¥4000-7000',
+    sum:'蓝色星球上最后一片净土。三神山、牛奶海。',
+    hl:['洛绒牛场','牛奶海','五色海','冲古寺','珍珠海'],
+    fd:'牦牛肉火锅、酥油茶、青稞饼、藏香猪肉',
+    tp:['提前吃红景天防高反','氧气瓶县城买','骑马到牛奶海提前订','保暖防雨必带'],
+    tr:'✈️ 稻城亚丁机场  |  🚌 成都大巴'},
+  {id:14,name:'拉萨',loc:'西藏·拉萨',tag:'小众',tc:'hidden',g:GRADIENTS[13],img:`https://picsum.photos/seed/${SEEDS[13]}/600/400`,rt:4.9,bm:'6-9月',dy:'5-8天',bg:'¥5000-10000',
+    sum:'日光之城，离天堂最近。布达拉宫、纳木错。',
+    hl:['布达拉宫','大昭寺','纳木错','八廓街','羊卓雍错'],
+    fd:'藏面、甜茶、酥油茶、牦牛肉干、糌粑、青稞酒',
+    tp:['布达拉宫提前一天预约','第一天别洗澡','寺庙拍照先问','穿鲜艳衣服好看'],
+    tr:'✈️ 拉萨贡嘎机场  |  🚄 拉萨站'},
+  {id:15,name:'敦煌',loc:'甘肃·酒泉',tag:'小众',tc:'hidden',g:GRADIENTS[14],img:`https://picsum.photos/seed/${SEEDS[14]}/600/400`,rt:4.8,bm:'5-10月',dy:'3-4天',bg:'¥2500-5000',
+    sum:'大漠深处的艺术宝库。莫高窟、鸣沙山月牙泉。',
+    hl:['莫高窟','鸣沙山月牙泉','玉门关','雅丹地质公园','敦煌夜市'],
+    fd:'驴肉黄面、敦煌酿皮、羊肉粉汤、杏皮水、李广杏',
+    tp:['莫高窟门票提前一个月抢','鸣沙山下午5点后去','保护好相机防沙','西北干燥带保湿'],
+    tr:'✈️ 敦煌莫高机场  |  🚄 敦煌站'},
+  {id:16,name:'婺源',loc:'江西·上饶',tag:'小众',tc:'hidden',g:GRADIENTS[15],img:`https://picsum.photos/seed/${SEEDS[15]}/600/400`,rt:4.7,bm:'3-4月/10-11月',dy:'2-3天',bg:'¥1000-2500',
+    sum:'中国最美的乡村。油菜花梯田、晒秋、徽派建筑。',
+    hl:['篁岭','江湾','李坑','月亮湾','石城'],
+    fd:'糊豆腐、粉蒸肉、婺源汽锅鸡、清明果、酒糟鱼',
+    tp:['春季3月中油菜花海','秋季10月底晒秋','景点分散包车','篁岭住山上看晨景'],
+    tr:'🚄 婺源站（高铁直达）'},
+  {id:17,name:'上海',loc:'上海',tag:'城市',tc:'city',g:GRADIENTS[16],img:`https://picsum.photos/seed/${SEEDS[16]}/600/400`,rt:4.6,bm:'3-5月/9-11月',dy:'3-5天',bg:'¥3000-6000',
+    sum:'魔都，东方巴黎。外滩、迪士尼、弄堂文化。',
+    hl:['外滩','迪士尼乐园','武康路/安福路','豫园/城隍庙','上海博物馆'],
+    fd:'小笼包、生煎包、红烧肉、葱油拌面、大闸蟹',
+    tp:['外滩夜景去北外滩','迪士尼买早享卡','地铁用支付宝刷','武康大楼上午去'],
+    tr:'✈️ 浦东/虹桥机场  |  🚄 上海站'},
+  {id:18,name:'哈尔滨',loc:'黑龙江·哈尔滨',tag:'城市',tc:'city',g:GRADIENTS[17],img:`https://picsum.photos/seed/${SEEDS[17]}/600/400`,rt:4.6,bm:'12-2月',dy:'3-5天',bg:'¥2000-4500',
+    sum:'冰雪之城，东方莫斯科。冰雕、雪乡、中央大街。',
+    hl:['冰雪大世界','中央大街','圣索菲亚大教堂','松花江冰雪嘉年华','雪乡'],
+    fd:'锅包肉、杀猪菜、铁锅炖大鹅、红肠、马迭尔冰棍',
+    tp:['冬季-20℃穿厚保暖','冰雪大世界下午去玩到晚上','手机贴暖宝宝','雪乡距哈市5h'],
+    tr:'✈️ 哈尔滨太平机场  |  🚄 哈尔滨站'},
+  {id:19,name:'东京',loc:'日本·东京',tag:'热门',tc:'hot',g:GRADIENTS[18],img:`https://picsum.photos/seed/${SEEDS[18]}/600/400`,rt:4.9,bm:'3-5月/10-11月',dy:'5-7天',bg:'¥8000-15000',
+    sum:'传统与未来融合。涩谷、浅草、秋叶原、富士山。',
+    hl:['浅草寺','涩谷SKY','秋叶原','富士山一日游','迪士尼海洋'],
+    fd:'寿司、拉面、天妇罗、和牛烤肉、抹茶甜品',
+    tp:['JR Pass看行程决定','地铁用Google Maps','带现金小店只收现金','垃圾分类严格'],
+    tr:'✈️ 成田/羽田机场  |  🚄 东京站'},
+  {id:20,name:'曼谷',loc:'泰国·曼谷',tag:'热门',tc:'hot',g:GRADIENTS[19],img:`https://picsum.photos/seed/${SEEDS[19]}/600/400`,rt:4.7,bm:'11月-次年2月',dy:'4-6天',bg:'¥3000-6000',
+    sum:'微笑之都。大皇宫、水上市场、夜市、泰式按摩。',
+    hl:['大皇宫+玉佛寺','卧佛寺','水上市场','暹罗广场','考山路'],
+    fd:'冬阴功汤、泰式炒河粉、芒果糯米饭、咖喱蟹、泰奶',
+    tp:['大皇宫着装过膝有袖','按摩给50-100铢小费','打车用Grab','路边摊肠胃敏感慎选'],
+    tr:'✈️ 素万那普/廊曼机场  |  🚇 BTS/MRT'}
+];
+
+const QUIZ = [
+  {q:'故宫博物院位于哪个城市？',o:['北京','西安','南京','洛阳'],a:0},
+  {q:'以下哪个不是"五岳"之一？',o:['泰山','华山','黄山','衡山'],a:2},
+  {q:'长江三峡不包括？',o:['瞿塘峡','巫峡','虎跳峡','西陵峡'],a:2},
+  {q:'兵马俑是哪个朝代的？',o:['周朝','秦朝','汉朝','唐朝'],a:1},
+  {q:'鼓浪屿位于哪个城市？',o:['福州','厦门','泉州','温州'],a:1},
+  {q:'布达拉宫位于哪个城市？',o:['西宁','拉萨','日喀则','林芝'],a:1},
+  {q:'中国最长的河流是？',o:['黄河','长江','珠江','黑龙江'],a:1},
+  {q:'"风花雪月"的"花"指大理什么花？',o:['梅花','上关花','樱花','杜鹃花'],a:1},
+  {q:'中国面积最大的省级行政区？',o:['西藏','新疆','内蒙古','青海'],a:1},
+  {q:'世界上最高的山峰是？',o:['K2','珠穆朗玛峰','干城章嘉峰','洛子峰'],a:1},
+  {q:'丽江古城在哪个省？',o:['四川','云南','贵州','广西'],a:1},
+  {q:'中国四大佛教名山在浙江的是？',o:['五台山','峨眉山','普陀山','九华山'],a:2},
+  {q:'青海湖是中国最大的什么湖？',o:['淡水湖','咸水湖','火山湖','冰蚀湖'],a:1},
+  {q:'"巴厘岛"属于哪个国家？',o:['马来西亚','泰国','印度尼西亚','菲律宾'],a:2},
+  {q:'泰姬陵位于哪个城市？',o:['新德里','阿格拉','孟买','斋浦尔'],a:1},
+];
+const FILTERS = [{k:'all',l:'🌟 全部'},{k:'热门',l:'🔥 热门'},{k:'海滩',l:'🏖️ 海滩'},{k:'城市',l:'🏙️ 城市'},{k:'小众',l:'✨ 小众'}];
+
+// ======================== STATE ========================
+let state = {
+  wish: JSON.parse(localStorage.getItem('tw_wish')||'[]'),
+  visited: JSON.parse(localStorage.getItem('tw_visited')||'[]'),
+  checkins: JSON.parse(localStorage.getItem('tw_checkins')||'[]'),
+  shakeCount: parseInt(localStorage.getItem('tw_shake')||'0'),
+  quizHigh: parseInt(localStorage.getItem('tw_quizHigh')||'0'),
+  quizPlayed: parseInt(localStorage.getItem('tw_quizPlayed')||'0'),
+};
+function saveState(){Object.entries({tw_wish:state.wish,tw_visited:state.visited,tw_checkins:state.checkins,tw_shake:state.shakeCount,tw_quizHigh:state.quizHigh,tw_quizPlayed:state.quizPlayed}).forEach(([k,v])=>localStorage.setItem(k,JSON.stringify(v)))}
+function inWish(id){return state.wish.includes(id)}
+function inVisited(id){return state.visited.includes(id)}
+function toggleWish(id){
+  var i=state.wish.indexOf(id);
+  if(i>-1){state.wish.splice(i,1);}else{state.wish.push(id);}
+  saveState();updateStats();
+  var isW=state.wish.includes(id);
+  var st=document.querySelectorAll('.wish-star');
+  for(var si=0;si<st.length;si++){
+    var eid=parseInt(st[si].getAttribute('data-id'));
+    if(eid===id){
+      st[si].innerHTML=isW?'\u2764\ufe0f':'\ud83e\udd0d';
+      st[si].className=st[si].className.replace(/ *active/g,'');
+      if(isW)st[si].className+=' active';
+    }
+  }
+  var ac=document.querySelectorAll('.detail-acts .act');
+  if(ac.length>0){
+    ac[0].innerHTML='<span class="icon">'+(isW?'\u2764\ufe0f':'\ud83e\udd0d')+'</span>'+(isW?'\u5df2\u5fc3\u613f':'\u60f3\u53bb');
+    ac[0].className=ac[0].className.replace(/ *active/g,'');
+    if(isW)ac[0].className+=' active';
+  }
+}
+function toggleVisit(id){
+  var i=state.visited.indexOf(id);
+  if(i>-1){
+    state.visited.splice(i,1);
+    state.checkins=state.checkins.filter(function(c){return c.id!==id;});
+  }else{
+    state.visited.push(id);
+    state.checkins.push({id:id,date:new Date().toLocaleDateString('zh-CN')});
+  }
+  saveState();updateStats();
+  var isV=state.visited.includes(id);
+  var ac=document.querySelectorAll('.detail-acts .act');
+  if(ac.length>1){
+    ac[1].innerHTML='<span class="icon">'+(isV?'\u2705':'\u2b55')+'</span>'+(isV?'\u5df2\u6253\u5361':'\u6253\u5361');
+    ac[1].className=ac[1].className.replace(/ *active/g,'');
+    if(isV)ac[1].className+=' active';
+  }
+}
+
+// ======================== APP INIT ========================
+document.addEventListener('DOMContentLoaded',()=>{
+  initTabs();renderFilters();renderIndex();renderWish();updateStats();
+  setTimeout(()=>document.getElementById('splash').classList.add('hide'),600);
+  if(window.DeviceOrientationEvent)window.addEventListener('devicemotion',e=>{
+    const a=e.accelerationIncludingGravity;if(!a)return;
+    if(Math.abs(a.x)+Math.abs(a.y)+Math.abs(a.z)>35)doShake();
+  });
+});
+
+function initTabs(){
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById(btn.dataset.page).classList.add('active');
+      if(btn.dataset.page==='pageWish')renderWish();
+      if(btn.dataset.page==='pageShake')updateStats();
+    });
+  });
+}
+
+// ======================== INDEX ========================
+let curFilter='all',searchVal='';
+
+function renderFilters(){
+  document.getElementById('filterBar').innerHTML=FILTERS.map(f=>
+    `<span class="filter-item ${f.k===curFilter?'active':''}" onclick="setFilter('${f.k}')">${f.l}</span>`
+  ).join('');
+}
+
+function setFilter(k){curFilter=k;renderFilters();renderIndex();}
+
+function doSearch(){renderIndex();}
+function clearSearch(){document.getElementById('searchInput').value='';searchVal='';renderIndex();}
+document.getElementById('searchInput').addEventListener('input',e=>{
+  searchVal=e.target.value.trim().toLowerCase();
+  document.getElementById('clearBtn').style.display=searchVal?'block':'none';
+  renderIndex();
+});
+
+function renderIndex(){
+  const q=searchVal||document.getElementById('searchInput').value.trim().toLowerCase();
+  const filtered=DESTINATIONS.filter(d=>{
+    if(curFilter!=='all'&&d.tag!==curFilter)return false;
+    if(q&&!d.name.includes(q)&&!d.loc.includes(q)&&!d.sum.includes(q))return false;
+    return true;
+  });
+  const el=document.getElementById('destList');
+  const empty=document.getElementById('emptyState');
+  if(!filtered.length){el.innerHTML='';empty.style.display='block';return}
+  empty.style.display='none';
+  el.innerHTML=filtered.map(d=>`
+    <div class="card" onclick="openDetail(${d.id})">
+      <div class="card-img">
+        <div class="img-bg" style="background:${d.g}"></div>
+        <img class="img-pic" src="${d.img}" loading="lazy" onerror="this.style.display='none'" />
+        <span class="img-tag tag-${d.tc}">${d.tag}</span>
+        <span class="wish-star ${inWish(d.id)?'active':''}" data-id="${d.id}" onclick="event.stopPropagation();toggleWish(${d.id})">${inWish(d.id)?'❤️':'🤍'}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${d.name}</div>
+        <div class="card-loc">${d.loc}</div>
+        <div class="card-desc">${d.sum}</div>
+        <div class="card-meta"><span>⭐ ${d.rt}</span><span>📅 ${d.dy}</span><span>💰 ${d.bg}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ======================== SHAKE ========================
+function updateStats(){
+  document.getElementById('shakeCount').textContent=state.shakeCount;
+  document.getElementById('wishCount').textContent=state.wish.length;
+  document.getElementById('checkinCount').textContent=state.visited.length;
+}
+
+function doShake(){
+  const btn=document.getElementById('shakeBtn');
+  const idle=document.getElementById('shakeIdle');
+  const res=document.getElementById('shakeResult');
+  btn.style.animation='none';void btn.offsetHeight;
+  btn.style.animation='shake .5s ease';
+  state.shakeCount++;saveState();
+  setTimeout(()=>{
+    const d=DESTINATIONS[Math.floor(Math.random()*DESTINATIONS.length)];
+    idle.style.display='none';
+    res.style.display='block';
+    res.innerHTML=`
+      <div class="res-img"><div class="img-bg" style="background:${d.g}"></div><img class="img-pic" src="${d.img}" onerror="this.style.display='none'" /></div>
+      <span class="res-badge tag-${d.tc}">${d.tag}</span>
+      <div class="res-name">${d.name}</div>
+      <div class="res-loc">📍 ${d.loc}</div>
+      <div class="res-desc">${d.sum}</div>
+      <div class="res-meta"><span>⭐ ${d.rt}</span><span>📅 ${d.dy}</span><span>💰 ${d.bg}</span></div>
+      <div class="res-acts"><button class="btn-pri" onclick="openDetail(${d.id})">查看攻略</button><button class="btn-sec" onclick="resetShake()">再摇一次 🔄</button></div>
+    `;
+    updateStats();
+    btn.style.animation='';
+  },500);
+}
+function resetShake(){
+  document.getElementById('shakeIdle').style.display='block';
+  document.getElementById('shakeResult').style.display='none';
+}
+
+// ======================== QUIZ ========================
+let qState={};
+function renderQuizHome(){
+  document.getElementById('quizWrap').innerHTML=`
+    <div class="quiz-mascot">🧠</div>
+    <div class="quiz-qtitle">旅行知识问答</div>
+    <div class="quiz-desc">共${QUIZ.length}道题，看看能答对几题</div>
+    <div class="quiz-high">🏆 最高纪录：<strong>${state.quizHigh}</strong> 分</div>
+    <button class="btn-pri" onclick="startQuiz()" style="padding:12px 36px;font-size:15px;border-radius:50px">开始答题 🚀</button>
+  `;
+}
+function startQuiz(){
+  qState={idx:0,score:0,correct:0,wrong:0,selected:null,questions:[...QUIZ].sort(()=>Math.random()-.5),finished:false};
+  renderQuizQ();
+}
+function renderQuizQ(){
+  if(qState.finished){renderQuizFinish();return}
+  const q=qState.questions[qState.idx];
+  const letters=['A','B','C','D'];
+  document.getElementById('quizWrap').innerHTML=`
+    <div style="width:100%;text-align:left">
+      <div class="quiz-prog"><div class="prog-bar"><div class="prog-fill" style="width:${(qState.idx/QUIZ.length*100)}%"></div></div><span class="prog-txt">${qState.idx+1}/${QUIZ.length}</span></div>
+      <span class="quiz-score">得分：${qState.score}</span>
+      <div class="quiz-card">
+        <span class="quiz-q">${q.q}</span>
+        <div class="quiz-options">${q.o.map((o,i)=>`
+          <div class="quiz-opt ${qState.selected!==null?(i===q.a?'correct':(qState.selected===i?'wrong':'')):''} ${qState.selected!==null?'disabled':''}" onclick="${qState.selected===null?`selectAnswer(${i})`:''}">
+            <span class="opt-letter">${letters[i]}.</span>
+            <span class="opt-text">${o}</span>
+            ${qState.selected!==null?(i===q.a?'<span>✅</span>':(qState.selected===i?'<span>❌</span>':'')):''}
+          </div>
+        `).join('')}</div>
+      </div>
+      ${qState.selected!==null?`<button class="btn-pri next-btn" onclick="nextQ()">${qState.idx<QUIZ.length-1?'下一题 →':'查看结果 🎉'}</button>`:''}
+    </div>
+  `;
+}
+function selectAnswer(i){
+  const q=qState.questions[qState.idx];
+  qState.selected=i;
+  if(i===q.a)qState.score++;
+  qState.correct+=(i===q.a?1:0);
+  qState.wrong+=(i!==q.a?1:0);
+  renderQuizQ();
+}
+function nextQ(){
+  qState.idx++;
+  qState.selected=null;
+  if(qState.idx>=QUIZ.length){qState.finished=true;renderQuizFinish();return}
+  renderQuizQ();
+}
+function renderQuizFinish(){
+  if(qState.score>state.quizHigh)state.quizHigh=qState.score;
+  state.quizPlayed++;saveState();
+  const pct=Math.round(qState.score/QUIZ.length*100);
+  let em,d;
+  if(pct>=90){em='🏆';d='旅行达人！你简直是活地图！'}
+  else if(pct>=70){em='🌟';d='不错！你对世界了解很多～'}
+  else if(pct>=50){em='💪';d='还可以再努力一下！'}
+  else{em='🧭';d='世界很大，继续探索吧～'}
+  document.getElementById('quizWrap').innerHTML=`
+    <div class="finish-emoji">${em}</div>
+    <div class="finish-title">答题完成！</div>
+    <div><span class="finish-score">${qState.score}</span><span class="finish-total"> / ${QUIZ.length}</span></div>
+    <div class="finish-desc">${d}</div>
+    <div class="finish-stats">
+      <div class="finish-stat"><span class="num">✅ ${qState.correct}</span>正确</div>
+      <div class="finish-stat"><span class="num">❌ ${qState.wrong}</span>错误</div>
+      <div class="finish-stat"><span class="num">🎯 ${pct}%</span>正确率</div>
+    </div>
+    <div class="finish-acts">
+      <button class="btn-pri" onclick="startQuiz()" style="border-radius:50px;padding:10px 20px">再来一轮 🔄</button>
+      <button class="btn-sec" onclick="renderQuizHome()" style="border-radius:50px;padding:10px 20px">返回</button>
+    </div>
+  `;
+}
+
+// ======================== WISH ========================
+function renderWish(){
+  const scroll=document.getElementById('wishScroll');
+  const pct=Math.round(state.visited.length/DESTINATIONS.length*100);
+  const wishEls=state.wish.map(id=>DESTINATIONS.find(d=>d.id===id)).filter(Boolean);
+  const visitEls=state.visited.map(id=>DESTINATIONS.find(d=>d.id===id)).filter(Boolean);
+  scroll.innerHTML=`
+    <div class="wish-stats">
+      <div class="wish-stat bg-wish"><span class="val">${state.wish.length}</span><span class="lbl">想去</span></div>
+      <div class="wish-stat bg-done" onclick="switchWishTab('visit')"><span class="val">${state.visited.length}</span><span class="lbl">已打卡</span></div>
+      <div class="wish-stat bg-all"><span class="val">${DESTINATIONS.length}</span><span class="lbl">总目的地</span></div>
+    </div>
+    <div class="wish-prog" onclick="switchWishTab('visit')">
+      <span class="lbl">旅行进度</span>
+      <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+      <span class="pct">${pct}%</span>
+    </div>
+  `;
+  const tabHtml=`<div class="wish-tabs"><div class="wish-tab ${wishTab==='wish'?'active':''}" onclick="switchWishTab('wish')">❤️ 想去 (${wishEls.length})</div><div class="wish-tab ${wishTab==='visit'?'active':''}" onclick="switchWishTab('visit')">✅ 已打卡 (${visitEls.length})</div></div>`;
+  const list=wishTab==='wish'?wishEls:visitEls;
+  let html=tabHtml;
+  if(list.length)html+=`<div class="dest-list">${list.map(d=>`
+    <div class="card" onclick="openDetail(${d.id})">
+      <div class="card-img"><div class="img-bg" style="background:${d.g}"></div><img class="img-pic" src="${d.img}" onerror="this.style.display='none'" /><span class="img-tag tag-${d.tc}">${d.tag}</span></div>
+      <div class="card-body"><div class="card-title">${d.name}</div><div class="card-loc">${d.loc}</div><div class="card-desc">${d.sum}</div><div class="card-meta"><span>⭐ ${d.rt}</span><span>📅 ${d.dy}</span>${wishTab==='visit'?'<span>✅ 已打卡</span>':''}</div></div>
+    </div>
+  `).join('')}</div>`;
+  else html+=`<div class="empty"><div class="e">${wishTab==='wish'?'💭':'🗺️'}</div><h3>${wishTab==='wish'?'还没有想去的地方':'还没有打卡记录'}</h3><p>${wishTab==='wish'?'去发现目的地吧～':'出发探索世界！'}</p></div>`;
+  scroll.innerHTML+=html;
+}
+let wishTab='wish';
+function switchWishTab(t){wishTab=t;renderWish();}
+
+// ======================== DETAIL ========================
+function openDetail(id){
+  const d=DESTINATIONS.find(x=>x.id===id);if(!d)return;
+  const food=d.fd.split('、');
+  const overlay=document.getElementById('detailOverlay');
+  document.getElementById('detailBody').innerHTML=`
+    <div class="detail-hero">
+      <div class="hero-bg" style="background:${d.g}"></div>
+      <img class="hero-pic" src="${d.img}" onerror="this.style.display='none'" />
+      <div class="hero-overlay"></div>
+      <div class="hero-text"><span class="img-tag tag-${d.tc}" style="position:static;display:inline-block;margin-bottom:6px">${d.tag}</span><span class="name">${d.name}</span><span class="loc">📍 ${d.loc}</span></div>
+    </div>
+    <div style="padding:12px 14px 20px">
+      <div class="detail-acts">
+        <div class="act ${inWish(id)?'active':''}" onclick="toggleWish(${d.id})"><span class="icon">${inWish(id)?'❤️':'🤍'}</span>${inWish(id)?'已心愿':'想去'}</div>
+        <div class="act ${inVisited(id)?'active':''}" onclick="toggleVisit(${d.id});"><span class="icon">${inVisited(id)?'✅':'⭕'}</span>${inVisited(id)?'已打卡':'打卡'}</div>
+        <div class="act" onclick="closeDetail()"><span class="icon">✕</span>关闭</div>
+      </div>
+      <div class="info-grid">
+        <div class="info-card"><span class="val">⭐ ${d.rt}</span><span class="lbl">评分</span></div>
+        <div class="info-card"><span class="val">${d.bm}</span><span class="lbl">最佳月份</span></div>
+        <div class="info-card"><span class="val">${d.dy}</span><span class="lbl">建议天数</span></div>
+        <div class="info-card"><span class="val">${d.bg}</span><span class="lbl">预算参考</span></div>
+      </div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px">${d.sum}</p>
+      <div class="section"><h4>🎯 必玩体验</h4>${d.hl.map(h=>`<div class="highlight-item"><span class="b">▸</span><span class="t">${h}</span></div>`).join('')}</div>
+      <div class="section"><h4>🍽️ 美食推荐</h4><div class="food-tags">${food.map(f=>`<span class="food-tag">${f}</span>`).join('')}</div></div>
+      <div class="section"><h4>💡 实用贴士</h4>${d.tp.map(t=>`<div class="tip-item"><span>📌</span><span class="t">${t}</span></div>`).join('')}</div>
+      <div class="section"><h4>🚗 交通方式</h4><div class="trans-box">${d.tr}</div></div>
+    </div>
+  `;
+  overlay.classList.add('show');document.body.style.overflow='hidden';
+}
+function closeDetail(){
+  document.getElementById('detailOverlay').classList.remove('show');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail()});
+
+// ======================== INIT PAGES ========================
+renderQuizHome();
+
+// Shake CSS animation
+const styleSheet=document.createElement('style');
+styleSheet.textContent=`@keyframes shake{0%,100%{transform:rotate(0)}10%{transform:rotate(-12deg)}20%{transform:rotate(10deg)}30%{transform:rotate(-8deg)}40%{transform:rotate(6deg)}50%{transform:rotate(-4deg)}60%{transform:rotate(2deg)}}`;
+document.head.appendChild(styleSheet);
+</script>
+</body>
+</html>
