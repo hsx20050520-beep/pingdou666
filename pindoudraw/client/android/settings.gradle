@@ -14,18 +14,10 @@ plugins {
 }
 
 extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
-    ex.autolinkLibrariesFromCommand()
-  } else {
-    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
-  }
+  ex.autolinkLibrariesFromCommand()
 }
-
-expoAutolinking.useExpoModules()
 
 rootProject.name = '新项目'
 
-expoAutolinking.useExpoVersionCatalog()
-
 include ':app'
-includeBuild(expoAutolinking.reactNativeGradlePlugin)
+includeBuild(reactNativeGradlePlugin)
