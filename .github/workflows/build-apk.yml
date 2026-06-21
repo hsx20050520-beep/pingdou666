@@ -34,7 +34,9 @@ jobs:
 
       - name: Fix gradle mirror + grant permission
         run: |
-          sed -i 's|mirrors.cloud.tencent.com/gradle|services.gradle.org|g' gradle/wrapper/gradle-wrapper.properties
+          # Fix gradle mirror URL and path
+          sed -i 's|mirrors.cloud.tencent.com/gradle/gradle|services.gradle.org/distributions/gradle|g' gradle/wrapper/gradle-wrapper.properties
+          cat gradle/wrapper/gradle-wrapper.properties
           chmod +x gradlew
 
       - name: Build APK
