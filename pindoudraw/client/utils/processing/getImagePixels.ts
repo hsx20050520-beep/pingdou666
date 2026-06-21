@@ -15,8 +15,6 @@ export async function getImagePixels(
   const ext = source.split(".").pop()?.toLowerCase() || "jpg";
   const mime = ext === "png" ? "image/png" : "image/jpeg";
   const dataUri = "data:" + mime + ";base64," + b64;
-  return new Promise((resolve, reject) => {
-    const { PixelReader } = await import("./PixelReader");
-    PixelReader.read(dataUri).then(resolve).catch(reject);
-  });
+  const { PixelReader } = await import("./PixelReader");
+  return PixelReader.read(dataUri);
 }
