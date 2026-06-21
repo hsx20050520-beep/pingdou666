@@ -9,6 +9,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     "name": appName,
     "slug": slugAppName,
+    "extra": {
+      "eas": {
+        "projectId": "8329e767-7636-4650-9b71-802733ddf8de"
+      }
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
