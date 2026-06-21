@@ -21,16 +21,6 @@ jobs:
           cd ..
           npx --yes pnpm@9 install --no-frozen-lockfile 2>&1 | tail -5
           cd client
-          # Patch the broken Kotlin file in expo-modules-autolinking
-          KOTLIN_FILE="node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/src/main/kotlin/expo/modules/plugin/SettingsManager.kt"
-          if [ -f "" ]; then
-            sed -i 's/extensions\./settings./g' ""
-            sed -i 's/\.extra/.properties/g' ""
-            echo "Patched SettingsManager.kt"
-          else
-            echo "File not found: "
-            find node_modules/expo-modules-autolinking -name "SettingsManager.kt" 2>/dev/null
-          fi
           npx --yes eas-cli build --platform android --profile preview --non-interactive 2>&1
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
