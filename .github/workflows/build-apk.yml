@@ -19,10 +19,9 @@ jobs:
         working-directory: ./pindoudraw/client
         run: |
           cd ..
-          npm install -g pnpm@9 2>&1 | tail -1
-          pnpm install --no-frozen-lockfile 2>&1 | tail -10
+          npx --yes pnpm@9 install --no-frozen-lockfile 2>&1 | tail -10
           cd client
-          npx eas build --platform android --profile preview --non-interactive 2>&1
+          npx --yes eas-cli build --platform android --profile preview --non-interactive 2>&1
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
