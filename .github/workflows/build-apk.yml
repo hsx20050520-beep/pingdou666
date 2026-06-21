@@ -41,7 +41,7 @@ jobs:
           chmod +x pindoudraw/client/android/gradlew
 
       - name: Build APK
-        run: ./pindoudraw/client/android/gradlew assembleRelease --no-daemon
+        run: cd pindoudraw/client/android && ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
