@@ -8,9 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./pindoudraw/client/android
 
     steps:
       - uses: actions/checkout@v4
@@ -23,25 +20,31 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install deps
-        run: |
-          cd ../../..
-          npm install -g pnpm@9 2>&1 | tail -3
-          pnpm install --no-frozen-lockfile 2>&1 | tail -10
+      - name: Install global tools
+        run: npm install -g pnpm@9
 
-      - name: Fix gradle mirror + grant permission
+      - name: Install dependencies
         run: |
-          # Fix gradle mirror URL and path
-          sed -i 's|mirrors.cloud.tencent.com/gradle/gradle|services.gradle.org/distributions/gradle|g' gradle/wrapper/gradle-wrapper.properties
-          cat gradle/wrapper/gradle-wrapper.properties
-          chmod +x gradlew
+          cd pindoudraw
+          pnpm install --no-frozen-lockfile 2>&1 | tail -15
+          # Copy node_modules to android dir so Gradle can find them
+          mkdir -p client/android/node_modules
+          cp -r node_modules/.pnpm/node_modules/@react-native client/android/node_modules/
+          cp -r node_modules/.pnpm/node_modules/react-native client/android/node_modules/
+          cp -r node_modules/.pnpm/node_modules/expo client/android/node_modules/ 2>/dev/null || true
+          cp -r node_modules/.pnpm/node_modules/expo-modules-autolinking client/android/node_modules/ 2>/dev/null || true
+          ls client/android/node_modules/ 2>/dev/null
+
+      - name: Fix gradle mirror
+        run: |
+          sed -i 's|mirrors.cloud.tencent.com/gradle/gradle|services.gradle.org/distributions/gradle|g' pindoudraw/client/android/gradle/wrapper/gradle-wrapper.properties
+          chmod +x pindoudraw/client/android/gradlew
 
       - name: Build APK
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./pindoudraw/client/android/gradlew assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: pindoudraw/client/android/app/build/outputs/apk/release/*.apk
-# workflow check
