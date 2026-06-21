@@ -22,7 +22,8 @@ jobs:
       - name: Install Node.js deps
         working-directory: ./pindoudraw
         run: |
-          npx --yes pnpm@9 install --no-frozen-lockfile 2>&1 | tail -5
+          npx --yes pnpm@9 install --no-frozen-lockfile 2>&1 | tail -3
+          npx --yes expo install --fix expo-modules-autolinking 2>&1 | tail -5
 
       - name: Fix gradle mirror + build
         working-directory: ./pindoudraw/client/android
